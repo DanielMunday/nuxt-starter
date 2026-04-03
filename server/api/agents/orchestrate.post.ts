@@ -5,6 +5,7 @@ import {
   MARKETING_TOOLS,
   SALES_TOOLS,
   executeTool,
+  popSessionDiagrams,
 } from "../../utils/agentTools";
 import type Anthropic from "@anthropic-ai/sdk";
 
@@ -123,10 +124,14 @@ export default defineEventHandler(async (event) => {
       "He procesado tu solicitud. ¿Puedo ayudarte con algo más?";
   }
 
+  // Recoger diagramas generados durante el loop agéntico
+  const diagramas = popSessionDiagrams();
+
   return {
     respuesta: finalResponse,
     agente,
     herramientasUsadas: [...new Set(toolsUsed)],
+    diagramas,
     historial: currentMessages,
   };
 });

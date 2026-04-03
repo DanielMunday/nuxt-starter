@@ -120,6 +120,40 @@ console.log(response.herramientasUsadas) // Herramientas que se activaron
 }
 ```
 
+## Diagramas draw.io (integración visual)
+
+Los agentes de **tracking**, **marketing** y **sales** pueden generar diagramas
+interactivos usando draw.io directamente en el chat. El diagrama se renderiza
+como iframe inline con zoom, pan y botón "Editar en draw.io".
+
+**Ejemplos de prompts que activan diagramas:**
+```
+"Muéstrame el pipeline como diagrama visual"
+"Genera un diagrama del proceso de un proyecto de arquitectura"
+"Visualiza el organigrama de clientes del CRM"
+"Diagrama de Gantt para el proyecto de TechPark (6 meses)"
+"Flujo del proceso comercial desde lead hasta firma de contrato"
+```
+
+**Cómo funciona internamente:**
+1. Claude genera XML en formato `mxGraphModel` de draw.io
+2. La herramienta `crear_diagrama` almacena el XML en el store de sesión
+3. El API devuelve `{ diagramas: [{tipo, titulo, xml}] }` junto con la respuesta
+4. El componente `DiagramViewer.vue` renderiza el XML vía el viewer oficial de draw.io
+
+**Integración con draw.io MCP Server (para Claude Code directamente):**
+El servidor MCP oficial está disponible en `https://mcp.draw.io/mcp`.
+Configurado en `CLAUDE.md` del proyecto.
+
+**Tipos de diagrama disponibles:**
+- `pipeline` — Estado del CRM con prospectos por etapa
+- `proceso` — Fases de un proyecto de arquitectura
+- `organigrama` — Estructura cliente/contacto/proyecto
+- `flujo` — Proceso comercial paso a paso
+- `gantt` — Cronograma simplificado de obra
+- `mapa` — Mapa de actores o stakeholders
+- `personalizado` — Cualquier otro diagrama
+
 ## Integración con n8n (como en el tutorial)
 
 Los endpoints están diseñados para ser llamados desde workflows de n8n:

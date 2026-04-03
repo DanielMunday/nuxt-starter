@@ -26,6 +26,14 @@
         </div>
         <div class="message-content">
           <div class="message-text" v-html="formatMessage(msg.content)"></div>
+          <!-- Diagramas draw.io adjuntos al mensaje -->
+          <DiagramViewer
+            v-for="(d, di) in msg.diagramas"
+            :key="di"
+            :xml="d.xml"
+            :titulo="d.titulo"
+            :tipo="d.tipo"
+          />
           <div v-if="msg.tools && msg.tools.length > 0" class="tools-used">
             <span v-for="tool in msg.tools" :key="tool" class="tool-tag">
               🔧 {{ tool }}
@@ -65,10 +73,17 @@
 </template>
 
 <script setup lang="ts">
+interface DiagramResult {
+  tipo: string;
+  titulo: string;
+  xml: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   tools?: string[];
+  diagramas?: DiagramResult[];
 }
 
 interface HistorialItem {
@@ -111,6 +126,7 @@ async function sendMessage(text?: string) {
     const response = await $fetch<{
       respuesta: string;
       herramientasUsadas: string[];
+      diagramas: DiagramResult[];
       historial: HistorialItem[];
     }>("/api/agents/orchestrate", {
       method: "POST",
@@ -125,6 +141,7 @@ async function sendMessage(text?: string) {
       role: "assistant",
       content: response.respuesta,
       tools: response.herramientasUsadas,
+      diagramas: response.diagramas?.length ? response.diagramas : undefined,
     });
 
     // Actualizar historial para contexto
