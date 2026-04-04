@@ -9,6 +9,41 @@ import {
 } from "../../utils/agentTools";
 import type Anthropic from "@anthropic-ai/sdk";
 
+/**
+ * Añade cache_control al último bloque de contenido de un mensaje.
+ * Convierte string content a array si es necesario.
+ */
+function withCache(msg: Anthropic.MessageParam): Anthropic.MessageParam {
+  const content = Array.isArray(msg.content)
+    ? msg.content
+    : [{ type: "text" as const, text: msg.content as string }];
+
+  const last = content[content.length - 1];
+  const cachedLast = { ...last, cache_control: { type: "ephemeral" as const } };
+
+  return { ...msg, content: [...content.slice(0, -1), cachedLast] };
+}
+
+/**
+ * Construye el array de mensajes con cache_control estratégico:
+ * - Marca el último mensaje del historial previo (prefijo estable)
+ * - Deja el mensaje nuevo sin marcar (cambia en cada turno)
+ */
+function buildMessages(
+  historial: Anthropic.MessageParam[],
+  newMessage: string
+): Anthropic.MessageParam[] {
+  const base: Anthropic.MessageParam[] = [...historial];
+
+  if (base.length > 0) {
+    // Cachear el prefijo estable: último mensaje del historial anterior
+    base[base.length - 1] = withCache(base[base.length - 1]);
+  }
+
+  base.push({ role: "user", content: newMessage });
+  return base;
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { message, agente = "orchestrator", historial = [] } = body;
@@ -53,15 +88,20 @@ export default defineEventHandler(async (event) => {
 
   const config = agentConfig[agente] || agentConfig.orchestrator;
 
-  // Construir historial de mensajes
-  const messages: Anthropic.MessageParam[] = [
-    ...historial,
-    { role: "user", content: message },
+  // System prompt cacheado (estable por agente — nunca cambia en runtime)
+  const systemCached: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: config.systemPrompt,
+      cache_control: { type: "ephemeral" },
+    },
   ];
+
+  // Mensajes con cache_control en el prefijo estable del historial
+  let currentMessages = buildMessages(historial, message);
 
   let finalResponse = "";
   let toolsUsed: string[] = [];
-  let currentMessages = [...messages];
 
   // Loop agéntico
   let iterations = 0;
@@ -74,7 +114,7 @@ export default defineEventHandler(async (event) => {
       model: MODEL,
       max_tokens: 4096,
       thinking: { type: "adaptive" },
-      system: config.systemPrompt,
+      system: systemCached,
       tools: config.tools,
       messages: currentMessages,
     });

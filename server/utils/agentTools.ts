@@ -98,6 +98,41 @@ export const PROSPECTING_TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+// Herramienta de diagramas draw.io — compartida por Marketing, Tracking y Sales
+const DIAGRAM_TOOL: Anthropic.Tool = {
+  name: "crear_diagrama",
+  description: `Genera un diagrama visual interactivo usando draw.io XML (mxGraphModel).
+Úsalo cuando el usuario pida visualizar datos: pipeline de ventas, fases de proyecto,
+organigrama de clientes, proceso comercial, cronograma de obra, mapa de actores, etc.
+IMPORTANTE: genera el XML completo y válido en formato mxGraphModel.
+Reglas del XML:
+- Siempre incluir <mxCell id="0"/> y <mxCell id="1" parent="0"/>
+- Cada elemento necesita id único, vertex="1", parent="1"
+- Los conectores necesitan edge="1", source y target, y <mxGeometry relative="1" as="geometry"/>
+- Espaciar nodos mínimo 160px horizontal, 100px vertical
+- Nunca incluir comentarios XML
+- Escapar &amp; &lt; &gt; en los valores`,
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      tipo: {
+        type: "string",
+        enum: ["pipeline", "proceso", "organigrama", "flujo", "gantt", "mapa", "personalizado"],
+        description: "Tipo de diagrama a generar",
+      },
+      titulo: {
+        type: "string",
+        description: "Título del diagrama",
+      },
+      xml: {
+        type: "string",
+        description: "XML completo en formato mxGraphModel de draw.io",
+      },
+    },
+    required: ["tipo", "titulo", "xml"],
+  },
+};
+
 export const TRACKING_TOOLS: Anthropic.Tool[] = [
   {
     name: "listar_prospectos",
@@ -187,41 +222,6 @@ export const TRACKING_TOOLS: Anthropic.Tool[] = [
   },
   DIAGRAM_TOOL,
 ];
-
-// Herramienta de diagramas draw.io — compartida por Marketing, Tracking y Sales
-const DIAGRAM_TOOL: Anthropic.Tool = {
-  name: "crear_diagrama",
-  description: `Genera un diagrama visual interactivo usando draw.io XML (mxGraphModel).
-Úsalo cuando el usuario pida visualizar datos: pipeline de ventas, fases de proyecto,
-organigrama de clientes, proceso comercial, cronograma de obra, mapa de actores, etc.
-IMPORTANTE: genera el XML completo y válido en formato mxGraphModel.
-Reglas del XML:
-- Siempre incluir <mxCell id="0"/> y <mxCell id="1" parent="0"/>
-- Cada elemento necesita id único, vertex="1", parent="1"
-- Los conectores necesitan edge="1", source y target, y <mxGeometry relative="1" as="geometry"/>
-- Espaciar nodos mínimo 160px horizontal, 100px vertical
-- Nunca incluir comentarios XML
-- Escapar &amp; &lt; &gt; en los valores`,
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      tipo: {
-        type: "string",
-        enum: ["pipeline", "proceso", "organigrama", "flujo", "gantt", "mapa", "personalizado"],
-        description: "Tipo de diagrama a generar",
-      },
-      titulo: {
-        type: "string",
-        description: "Título del diagrama",
-      },
-      xml: {
-        type: "string",
-        description: "XML completo en formato mxGraphModel de draw.io",
-      },
-    },
-    required: ["tipo", "titulo", "xml"],
-  },
-};
 
 export const MARKETING_TOOLS: Anthropic.Tool[] = [
   {
